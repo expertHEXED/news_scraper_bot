@@ -1,5 +1,76 @@
 import os
 import threading
+import random
+from flask import Flask
+import telebot
+from telebot import types
+
+# --- SOZLAMALAR ---
+BOT_TOKEN = "8748456961:AAGKng_Y0vwE5o3L6jMwPCaa5dw0YNsi_BI"
+bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot 24/7 faol! 🚀"
+
+# --- FOYDALI MA'LUMOTLAR ---
+
+HIKMATLAR = [
+    "Muvaffaqiyat — bu yiqilishdan to'xtash emas, balki har safar yiqilganda qayta tura olishdir.",
+    "Bugungi mehnat — ertangi rohatning poydevori.",
+    "Bilim — boylikdan ustun, chunki bilim seni asraydi, boylikni esa sen asrashing kerak.",
+    "Vaqt — bu biz ega bo'lgan eng qimmatbaho xazinadir, uni bexuda sarflamang.",
+    "Kichik qadamlar katta natijalarga olib boradi."
+]
+
+NAMOZ_VAQTLARI = """
+🕌 **Toshkent shahri uchun namoz vaqtlari (Taxminiy):**
+🏙 Bomdod: 04:10
+🌅 Quyosh: 05:45
+☀️ Peshin: 12:40
+🌇 Asr: 17:25
+🌆 Shom: 19:35
+🌃 Xufton: 21:10
+"""
+
+# --- HANDLERS ---
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    m = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    m.add("🎓 Kun hikmati", "🎲 Tasodifiy son")
+    m.add("🕌 Namoz vaqtlari", "📰 Yangiliklar")
+    bot.send_message(message.chat.id, f"Salom {message.from_user.first_name}! Kerakli bo'limni tanlang:", reply_markup=m)
+
+@bot.message_handler(func=lambda msg: True)
+def handle(msg):
+    if msg.text == "🎓 Kun hikmati":
+        hikmat = random.choice(HIKMATLAR)
+        bot.send_message(msg.chat.id, f"💡 **Kun hikmati:**\n\n_{hikmat}_", parse_mode="Markdown")
+    
+    elif msg.text == "🎲 Tasodifiy son":
+        son = random.randint(1, 100)
+        bot.send_message(msg.chat.id, f"🎲 Sizga tushgan son: **{son}**", parse_mode="Markdown")
+        
+    elif msg.text == "🕌 Namoz vaqtlari":
+        bot.send_message(msg.chat.id, NAMOZ_VAQTLARI, parse_mode="Markdown")
+        
+    elif msg.text == "📰 Yangiliklar":
+        bot.send_message(msg.chat.id, "Yugurib borib so'nggi yangilikni axtaryapman... 🏃‍♂️")
+        # Bu yerga boyagi get_news() funksiyasini qo'shib qo'yishingiz mumkin
+        bot.send_message(msg.chat.id, "Tez orada Kun.uz yangiliklari bu yerda chiqadi!")
+
+# --- RUN ---
+def run_bot():
+    bot.infinity_polling(timeout=20, long_polling_timeout=10)
+
+threading.Thread(target=run_bot, daemon=True).start()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)import os
+import threading
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask
