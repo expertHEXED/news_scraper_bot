@@ -3,6 +3,101 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import threading
+import os
+from flask import Flask
+from telebot import types
+
+# --- SOZLAMALAR ---
+BOT_TOKEN = "8748456961:AAGKng_Y0vwE5o3L6jMwPCaa5dw0YNsi_BI"
+bot = telebot.TeleBot(BOT_TOKEN)
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Xaker Bot 24/7 ishlamoqda! 😎"
+
+# --- FUNKSIYALAR ---
+
+def get_currency():
+    try:
+        # Muqobil API (CBU)
+        url = "https://cbu.uz/uz/arkhiv-kursov-valyut/json/"
+        response = requests.get(url, timeout=10).json()
+        usd = next(item for item in response if item["code"] == "USD")
+        eur = next(item for item in response if item["code"] == "EUR")
+        return f"💰 **Rasmiy kurs (MB):**\n\n🇺🇸 1 USD = {usd['Rate']} so'm\n🇪🇺 1 EUR = {eur['Rate']} so'm"
+    except Exception as e:
+        return f"⚠️ Kursni olishda xatolik yuz berdi."
+
+def get_weather():
+    try:
+        url = "https://api.open-meteo.com/v1/forecast?latitude=41.26&longitude=69.21&current_weather=true"
+        res = requests.get(url, timeout=10).json()
+        temp = res['current_weather']['temperature']
+        return f"🌤 **Toshkentda ob-havo:**\n\nHarorat: {temp}°C"
+    except Exception as e:
+        return "⚠️ Ob-havoda xatolik."
+
+def get_latest_news():
+    url = "https://kun.uz/news/list"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        for link in soup.find_all('a'):
+            href = link.get('href', '')
+            text = link.text.strip()
+            if '/news/20' in href and len(text) > 15:
+                full_link = "https://kun.uz" + href if not href.startswith('http') else href
+                return {"title": text, "link": full_link}
+        return None
+    except:
+        return None
+
+# --- BOT HANDLERS ---
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add("💹 Valyuta kursi", "🌤 Ob-havo (Toshkent)")
+    markup.add("📰 So'nggi yangilik")
+    bot.send_message(message.chat.id, "Xush kelibsiz! Tanlang:", reply_markup=markup)
+
+@bot.message_handler(func=lambda message: True)
+def handle_messages(message):
+    if message.text == "💹 Valyuta kursi":
+        bot.send_message(message.chat.id, get_currency(), parse_mode="Markdown")
+    elif message.text == "🌤 Ob-havo (Toshkent)":
+        bot.send_message(message.chat.id, get_weather(), parse_mode="Markdown")
+    elif message.text == "📰 So'nggi yangilik":
+        news = get_latest_news()
+        if news:
+            bot.send_message(message.chat.id, f"<b>{news['title']}</b>\n\n{news['link']}", parse_mode="HTML")
+        else:
+            bot.send_message(message.chat.id, "Yangilik topilmadi.")
+
+# --- RENDER RUNNER ---
+
+def start_bot():
+    try:
+        print("Bot ishga tushmoqda...")
+        bot.infinity_polling(timeout=20, long_polling_timeout=10)
+    except Exception as e:
+        print(f"Botda xatolik: {e}")
+
+# Botni alohida oqimda ishga tushirish
+thread = threading.Thread(target=start_bot)
+thread.daemon = True
+thread.start()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)import telebot
+import requests
+from bs4 import BeautifulSoup
+import time
+import threading
 import schedule
 import os
 from flask import Flask
