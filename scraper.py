@@ -19,24 +19,17 @@ def home():
 
 def get_currency():
     try:
-        # CBU (Markaziy Bank) ochiq API
         url = "https://cbu.uz/uz/arkhiv-kursov-valyut/json/"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-        }
-        response = requests.get(url, headers=headers, timeout=10)
+        # Eng muhim narsa - timeout va headers
+        res = requests.get(url, timeout=15)
+        res.raise_for_status() # Agar status 200 bo'lmasa, xatoga sakraydi
         
-        if response.status_code == 200:
-            data = response.json()
-            # Dollar va Evroni izlaymiz
-            usd = next(x for x in data if x["code"] == "USD")
-            eur = next(x for x in data if x["code"] == "EUR")
-            return f"💰 **Rasmiy kurs (MB):**\n🇺🇸 1 USD = {usd['Rate']} so'm\n🇪🇺 1 EUR = {eur['Rate']} so'm"
-        else:
-            return f"⚠️ Bank sayti javob bermadi (Status: {response.status_code})"
+        data = res.json()
+        usd = next(x for x in data if x["code"] == "USD")
+        return f"🇺🇸 1 USD = {usd['Rate']} so'm"
     except Exception as e:
-        print(f"VALYUTA XATOSI: {e}") # Terminalda xatoni ko'rish uchun
-        return "⚠️ Valyuta kursini olishda texnik xatolik."
+        # Xatoni yashirmaymiz, botga yuboramiz!
+        return f"Xato turi: {type(e).__name__}\nMa'lumot: {str(e)[:50]}"
 
 def get_weather():
     try:
