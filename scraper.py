@@ -19,22 +19,41 @@ def home():
 
 def get_currency():
     try:
+        # CBU (Markaziy Bank) ochiq API
         url = "https://cbu.uz/uz/arkhiv-kursov-valyut/json/"
-        res = requests.get(url, timeout=10).json()
-        usd = next(x for x in res if x["code"] == "USD")
-        eur = next(x for x in res if x["code"] == "EUR")
-        return f"💰 **Kurs (MB):**\n🇺🇸 1 USD = {usd['Rate']} so'm\n🇪🇺 1 EUR = {eur['Rate']} so'm"
-    except:
-        return "⚠️ Kursni olishda xatolik."
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            # Dollar va Evroni izlaymiz
+            usd = next(x for x in data if x["code"] == "USD")
+            eur = next(x for x in data if x["code"] == "EUR")
+            return f"💰 **Rasmiy kurs (MB):**\n🇺🇸 1 USD = {usd['Rate']} so'm\n🇪🇺 1 EUR = {eur['Rate']} so'm"
+        else:
+            return f"⚠️ Bank sayti javob bermadi (Status: {response.status_code})"
+    except Exception as e:
+        print(f"VALYUTA XATOSI: {e}") # Terminalda xatoni ko'rish uchun
+        return "⚠️ Valyuta kursini olishda texnik xatolik."
 
 def get_weather():
     try:
+        # Open-Meteo tekin API (Hech qanday Key kerak emas)
         url = "https://api.open-meteo.com/v1/forecast?latitude=41.26&longitude=69.21&current_weather=true"
-        res = requests.get(url, timeout=10).json()
-        temp = res['current_weather']['temperature']
-        return f"🌤 **Toshkent:** {temp}°C"
-    except:
-        return "⚠️ Ob-havoda xatolik."
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            temp = data['current_weather']['temperature']
+            return f"🌤 **Toshkentda ob-havo:**\n\nHozirgi harorat: {temp}°C"
+        else:
+            return "⚠️ Ob-havo xizmati vaqtincha ishlamayapti."
+    except Exception as e:
+        print(f"OB-HAVO XATOSI: {e}")
+        return "⚠️ Ob-havo ma'lumotini yuklab bo'lmadi."
 
 def get_news():
     try:
