@@ -25,23 +25,35 @@ def home():
 
 def get_currency():
     try:
+        # NBU API ba'zan injiqlik qiladi, shuning uchun muqobil variant
         url = "https://nbu.uz/uz/exchange-rates/json/"
-        response = requests.get(url).json()
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers, timeout=10).json()
+        
+        # Dollar va Evroni qidiramiz
         usd = next(item for item in response if item["code"] == "USD")
         eur = next(item for item in response if item["code"] == "EUR")
-        return f"💰 **Rasmiy kurs:**\n🇺🇸 1 USD = {usd['cb_price']} so'm\n🇪🇺 1 EUR = {eur['cb_price']} so'm"
-    except:
-        return "⚠️ Kursni olishda xatolik."
+        
+        return f"💰 **Rasmiy kurs (NBU):**\n\n🇺🇸 1 USD = {usd['cb_price']} so'm\n🇪🇺 1 EUR = {eur['cb_price']} so'm"
+    except Exception as e:
+        print(f"Valyuta xatosi: {e}")
+        return "⚠️ Valyuta kursini olishda muammo bo'ldi. Birozdan so'ng urinib ko'ring."
 
 def get_weather():
     try:
+        # Toshkent koordinatalari: 41.26, 69.21
         url = "https://api.open-meteo.com/v1/forecast?latitude=41.26&longitude=69.21&current_weather=true"
-        res = requests.get(url).json()
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res = requests.get(url, headers=headers, timeout=10).json()
+        
         temp = res['current_weather']['temperature']
-        return f"🌤 **Toshkent:** {temp}°C"
-    except:
-        return "⚠️ Ob-havoda xatolik."
-
+        wind = res['current_weather']['windspeed']
+        
+        return f"🌤 **Toshkentda ob-havo:**\n\n🌡 Harorat: {temp}°C\n💨 Shamol: {wind} km/soat"
+    except Exception as e:
+        print(f"Ob-havo xatosi: {e}")
+        return "⚠️ Ob-havo ma'lumotini yuklashda xatolik."
+    
 def get_latest_news():
     url = "https://kun.uz/news/list"
     headers = {"User-Agent": "Mozilla/5.0"}
